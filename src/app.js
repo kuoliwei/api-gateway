@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/services.js';
 import { authMiddleware } from './middlewares/authMiddleware.js';
+import { internalAuthMiddleware } from './middlewares/internalAuthMiddleware.js';
 import { publicAuthProxy } from './proxies/authProxy.js';
 import { userProxy } from './proxies/userProxy.js';
 import { characterProxy } from './proxies/characterProxy.js';
@@ -68,6 +69,22 @@ app.use('/characters', authMiddleware, characterProxy);
 // 流程：先驗 JWT，成功後把 /conversations 相關請求轉發到 chat-service。
 // pathRewrite 會把 /conversations 轉換成 chat-service 內部的 /api/v1/conversations。
 app.use('/conversations', authMiddleware, chatProxy);
+
+// ===== 內部服務調用路由 =====
+// 用於後端服務間的內部通訊（例如 ai-service 呼叫 chat-service）
+// 這些路由只允許來自內部的請求（同一網路內的服務）
+
+// 內部：獲取角色資訊（來自 character-service）
+// 使用方式：ai-service 呼叫 GET http://localhost:8000/internal/characters/:id
+app.use('/internal/characters', internalAuthMiddleware, characterProxy);
+
+// 內部：獲取對話歷史和發送訊息（來自 chat-service）
+// 使用方式：ai-service 呼叫 GET/POST http://localhost:8000/internal/conversations
+app.use('/internal/conversations', internalAuthMiddleware, chatProxy);
+
+// 內部：獲取用戶資訊（來自 user-service）
+// 使用方式：ai-service 呼叫 GET http://localhost:8000/internal/users/:id
+app.use('/internal/users', internalAuthMiddleware, userProxy);
 
 // 如果上面的路由都沒有匹配到，就回傳 404。
 // 這可以避免使用者打錯路由時收到不清楚的預設回應。
