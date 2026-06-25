@@ -23,4 +23,7 @@ export const config = {
 
   // character-service 的位置。Gateway 會把 /characters/* 的請求轉發到這裡。
   characterServiceUrl: process.env.CHARACTER_SERVICE_URL || 'http://localhost:5000',
+
+  // chat-service 的位置。Gateway 會把 /conversations/* 的請求轉發到這裡。
+  chatServiceUrl: process.env.CHAT_SERVICE_URL || 'http://localhost:6000',
 };

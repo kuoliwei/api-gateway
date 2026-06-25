@@ -8,6 +8,7 @@ import { authMiddleware } from './middlewares/authMiddleware.js';
 import { publicAuthProxy } from './proxies/authProxy.js';
 import { userProxy } from './proxies/userProxy.js';
 import { characterProxy } from './proxies/characterProxy.js';
+import { chatProxy } from './proxies/chatProxy.js';
 
 // 建立 Express 應用程式，這個 app 就是 API Gateway 本體。
 const app = express();
@@ -41,6 +42,7 @@ app.get('/api/config', (req, res) => {
       web: process.env.FRONTEND_WEB_URL || 'http://localhost:5173',
       character: process.env.FRONTEND_CHARACTER_URL || 'http://localhost:5174',
       lobby: process.env.FRONTEND_LOBBY_URL || 'http://localhost:5175',
+      chat: process.env.FRONTEND_CHAT_URL || 'http://localhost:5176',
     }
   });
 });
@@ -61,6 +63,11 @@ app.use('/users', authMiddleware, userProxy);
 // 流程：先驗 JWT，成功後把 /characters 相關請求轉發到 character-service。
 // pathRewrite 會把 /characters 轉換成 character-service 內部的 /api/v1/characters。
 app.use('/characters', authMiddleware, characterProxy);
+
+// 受保護路由：chat-service 的操作。
+// 流程：先驗 JWT，成功後把 /conversations 相關請求轉發到 chat-service。
+// pathRewrite 會把 /conversations 轉換成 chat-service 內部的 /api/v1/conversations。
+app.use('/conversations', authMiddleware, chatProxy);
 
 // 如果上面的路由都沒有匹配到，就回傳 404。
 // 這可以避免使用者打錯路由時收到不清楚的預設回應。
