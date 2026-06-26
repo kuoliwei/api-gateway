@@ -10,6 +10,7 @@ import { publicAuthProxy } from './proxies/authProxy.js';
 import { userProxy } from './proxies/userProxy.js';
 import { characterProxy } from './proxies/characterProxy.js';
 import { chatProxy } from './proxies/chatProxy.js';
+import { aiProxy } from './proxies/aiProxy.js';
 
 // 建立 Express 應用程式，這個 app 就是 API Gateway 本體。
 const app = express();
@@ -85,6 +86,14 @@ app.use('/internal/conversations', internalAuthMiddleware, chatProxy);
 // 內部：獲取用戶資訊（來自 user-service）
 // 使用方式：ai-service 呼叫 GET http://localhost:8000/internal/users/:id
 app.use('/internal/users', internalAuthMiddleware, userProxy);
+
+// 內部：RAG 操作（來自 ai-service）
+// 使用方式：chat-service 呼叫 POST http://localhost:8000/internal/rag/conversations/initialize
+app.use('/internal/rag', internalAuthMiddleware, aiProxy);
+
+// 內部：聊天生成（來自 ai-service）
+// 使用方式：chat-service 呼叫 POST http://localhost:8000/internal/chat/generate
+app.use('/internal/chat', internalAuthMiddleware, aiProxy);
 
 // 如果上面的路由都沒有匹配到，就回傳 404。
 // 這可以避免使用者打錯路由時收到不清楚的預設回應。

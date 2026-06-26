@@ -26,4 +26,7 @@ export const config = {
 
   // chat-service 的位置。Gateway 會把 /conversations/* 的請求轉發到這裡。
   chatServiceUrl: process.env.CHAT_SERVICE_URL || 'http://localhost:6000',
+
+  // ai-service 的位置。Gateway 會把 /internal/rag/* 的請求轉發到這裡。
+  aiServiceUrl: process.env.AI_SERVICE_URL || 'http://localhost:6001',
 };
