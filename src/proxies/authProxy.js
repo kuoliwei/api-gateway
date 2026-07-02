@@ -28,5 +28,12 @@ export const publicAuthProxy = createProxyMiddleware({
   },
   on: {
     proxyRes: removeDownstreamCorsHeaders,
+    error: (err, req, res) => {
+      console.error(`❌ [authProxy] 轉發失敗：${err.message}`);
+      res.status(502).json({
+        error: 'Bad Gateway',
+        message: `無法連線到 auth-service: ${err.message}`
+      });
+    }
   },
 });

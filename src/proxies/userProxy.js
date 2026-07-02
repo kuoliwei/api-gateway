@@ -24,5 +24,12 @@ export const userProxy = createProxyMiddleware({
   // 和 user-service 的 /users 路徑剛好一樣。
   on: {
     proxyRes: removeDownstreamCorsHeaders,
+    error: (err, req, res) => {
+      console.error(`❌ [userProxy] 轉發失敗：${err.message}`);
+      res.status(502).json({
+        error: 'Bad Gateway',
+        message: `無法連線到 user-service: ${err.message}`
+      });
+    }
   },
 });
