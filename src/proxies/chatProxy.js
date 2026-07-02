@@ -25,7 +25,7 @@ export const chatProxy = createProxyMiddleware({
       console.error(`❌ [chatProxy] 轉發失敗：${err.message}`);
       res.status(502).json({
         error: 'Bad Gateway',
-        message: `無法連線到 chat-service: ${err.message}`
+        message: '無法連線到聊天伺服器，請稍後重試。'
       });
     }
   },

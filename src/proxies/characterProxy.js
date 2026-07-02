@@ -27,7 +27,7 @@ export const characterProxy = createProxyMiddleware({
       console.error(`❌ [characterProxy] 轉發失敗：${err.message}`);
       res.status(502).json({
         error: 'Bad Gateway',
-        message: `無法連線到 character-service: ${err.message}`
+        message: '無法連線到角色伺服器，請稍後重試。'
       });
     }
   },

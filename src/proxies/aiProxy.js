@@ -41,7 +41,7 @@ export const aiProxy = createProxyMiddleware({
       console.error(`❌ [aiProxy] 轉發失敗：${err.message}`);
       res.status(502).json({
         error: 'Bad Gateway',
-        message: `無法連線到 ai-service: ${err.message}`
+        message: '無法連線到 AI 伺服器，請稍後重試。'
       });
     }
   },

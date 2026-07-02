@@ -28,7 +28,7 @@ export const userProxy = createProxyMiddleware({
       console.error(`❌ [userProxy] 轉發失敗：${err.message}`);
       res.status(502).json({
         error: 'Bad Gateway',
-        message: `無法連線到 user-service: ${err.message}`
+        message: '無法連線到使用者伺服器，請稍後重試。'
       });
     }
   },

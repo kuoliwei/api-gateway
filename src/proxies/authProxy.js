@@ -32,7 +32,7 @@ export const publicAuthProxy = createProxyMiddleware({
       console.error(`❌ [authProxy] 轉發失敗：${err.message}`);
       res.status(502).json({
         error: 'Bad Gateway',
-        message: `無法連線到 auth-service: ${err.message}`
+        message: '無法連線到認證伺服器，請稍後重試。'
       });
     }
   },
