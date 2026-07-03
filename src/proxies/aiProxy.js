@@ -8,9 +8,9 @@ function removeDownstreamCorsHeaders(proxyRes) {
   delete proxyRes.headers['access-control-allow-headers'];
 }
 
-// aiProxy 負責把 /internal/rag 和 /internal/chat 相關請求轉發到 ai-service。
-// ai-service 內部路徑為 /api/v1/rag 和 /api/v1/chat，
-// 所以這裡透過 pathRewrite 把路徑轉換成 /api/v1/{rag|chat}。
+// aiProxy 負責把 /internal/rag、/internal/chat 和 /internal/health 相關請求轉發到 ai-service。
+// ai-service 內部路徑為 /api/v1/rag、/api/v1/chat 和 /health，
+// 所以這裡透過 pathRewrite 把路徑轉換成對應的格式。
 export const aiProxy = createProxyMiddleware({
   target: config.aiServiceUrl,
   changeOrigin: true,
@@ -18,12 +18,14 @@ export const aiProxy = createProxyMiddleware({
     console.log(`🔍 [aiProxy] pathRewrite 輸入: ${path}, originalUrl: ${req.originalUrl}`);
     let rewritten = path;
 
-    // Express 已經去掉了 /internal/rag 或 /internal/chat 前綴
-    // 現在 path 是剩下的部分，比如 /conversations/initialize 或 /generate
+    // Express 已經去掉了 /internal/rag、/internal/chat 或 /internal/health 前綴
+    // 現在 path 是剩下的部分
     if (req.originalUrl.includes('/internal/rag')) {
       rewritten = `/api/v1/rag${path}`;
     } else if (req.originalUrl.includes('/internal/chat')) {
       rewritten = `/api/v1/chat${path}`;
+    } else if (req.originalUrl.includes('/internal/health')) {
+      rewritten = `/health`;
     }
 
     console.log(`📝 [aiProxy] pathRewrite 輸出: ${rewritten}`);

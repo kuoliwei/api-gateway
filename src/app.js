@@ -95,6 +95,10 @@ app.use('/internal/rag', internalAuthMiddleware, aiProxy);
 // 使用方式：chat-service 呼叫 POST http://localhost:8000/internal/chat/generate
 app.use('/internal/chat', internalAuthMiddleware, aiProxy);
 
+// 內部：AI Service 健康檢查
+// 使用方式：chat-service 呼叫 GET http://localhost:8000/internal/health/ai
+app.use('/internal/health', internalAuthMiddleware, aiProxy);
+
 // 如果上面的路由都沒有匹配到，就回傳 404。
 // 這可以避免使用者打錯路由時收到不清楚的預設回應。
 app.use((req, res) => {
