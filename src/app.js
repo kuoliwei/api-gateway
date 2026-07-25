@@ -35,41 +35,47 @@ app.get('/health', (req, res) => {
 
 // 公開路由：前端配置端點。
 // 前端啟動時呼叫此端點，獲取後端服務的地址。
+// 預設值一律基於 Caddy 的同源入口（localhost:8080），而不是各服務裸 port，
+// 這樣前端讀到的網址才會留在 Caddy 代理範圍內，/api/* 才轉得回 Gateway。
+// 裸 port（8000/5173-5176）仍然存在、可直接打，但那是繞過同源架構的開發捷徑，
+// 不該是前端预設拿到的網址。
 app.get('/api/config', (req, res) => {
   return res.status(200).json({
     services: {
-      gateway: process.env.API_GATEWAY_URL || `http://localhost:${config.port}`,
+      gateway: process.env.API_GATEWAY_URL || 'http://localhost:8080/api',
     },
     frontends: {
-      web: process.env.FRONTEND_WEB_URL || 'http://localhost:5173',
-      character: process.env.FRONTEND_CHARACTER_URL || 'http://localhost:5174',
-      lobby: process.env.FRONTEND_LOBBY_URL || 'http://localhost:5175',
-      chat: process.env.FRONTEND_CHAT_URL || 'http://localhost:5176',
+      web: process.env.FRONTEND_WEB_URL || 'http://localhost:8080/login',
+      character: process.env.FRONTEND_CHARACTER_URL || 'http://localhost:8080/character',
+      lobby: process.env.FRONTEND_LOBBY_URL || 'http://localhost:8080',
+      chat: process.env.FRONTEND_CHAT_URL || 'http://localhost:8080/chat',
     }
   });
 });
 
 // 公開路由：註冊不需要 token。
-// Gateway 收到 POST /auth/register 後，會轉發到 auth-service。
-app.post('/auth/register', publicAuthProxy);
+// Gateway 收到 POST /api/auth/register 後，會轉發到 auth-service。
+// 掛在 /api 前綴下，是為了跟 Caddy 同源部署的 /api/* 轉發規則對齊
+// （Caddy 轉發 /api/* 給 Gateway 時不會 strip prefix，Gateway 這邊就要吃得到 /api）。
+app.post('/api/auth/register', publicAuthProxy);
 
 // 公開路由：登入不需要 token。
-// Gateway 收到 POST /auth/login 後，會轉發到 auth-service。
-app.post('/auth/login', publicAuthProxy);
+// Gateway 收到 POST /api/auth/login 後，會轉發到 auth-service。
+app.post('/api/auth/login', publicAuthProxy);
 
 // 受保護路由：user-service 的操作。
-// 流程：先驗 JWT，成功後把 /users 相關請求轉發到 user-service。
-app.use('/users', authMiddleware, userProxy);
+// 流程：先驗 JWT，成功後把 /api/users 相關請求轉發到 user-service。
+app.use('/api/users', authMiddleware, userProxy);
 
 // 受保護路由：character-service 的操作。
-// 流程：先驗 JWT，成功後把 /characters 相關請求轉發到 character-service。
+// 流程：先驗 JWT，成功後把 /api/characters 相關請求轉發到 character-service。
 // pathRewrite 會把 /characters 轉換成 character-service 內部的 /api/v1/characters。
-app.use('/characters', authMiddleware, characterProxy);
+app.use('/api/characters', authMiddleware, characterProxy);
 
 // 受保護路由：chat-service 的操作。
-// 流程：先驗 JWT，成功後把 /conversations 相關請求轉發到 chat-service。
+// 流程：先驗 JWT，成功後把 /api/conversations 相關請求轉發到 chat-service。
 // pathRewrite 會把 /conversations 轉換成 chat-service 內部的 /api/v1/conversations。
-app.use('/conversations', authMiddleware, chatProxy);
+app.use('/api/conversations', authMiddleware, chatProxy);
 
 // ===== 內部服務調用路由 =====
 // 用於後端服務間的內部通訊（例如 ai-service 呼叫 chat-service）
@@ -83,8 +89,11 @@ app.use('/internal/characters', internalAuthMiddleware, characterProxy);
 // 使用方式：ai-service 呼叫 GET/POST http://localhost:8000/internal/conversations
 app.use('/internal/conversations', internalAuthMiddleware, chatProxy);
 
-// 內部：獲取用戶資訊（來自 user-service）
-// 使用方式：ai-service 呼叫 GET http://localhost:8000/internal/users/:id
+// 內部：用戶資訊相關操作（來自 user-service）
+// 涵蓋兩種語意：
+//   - GET  /internal/users/:id → 查詢使用者資訊（例如 ai-service 查詢）
+//   - POST /internal/users     → 建立使用者帳號（auth-service 註冊流程呼叫，取代原本直連 user-service:4000）
+// userProxy 的 pathRewrite 會把前綴補回 /users，轉發到 user-service 的 /users、/users/:id。
 app.use('/internal/users', internalAuthMiddleware, userProxy);
 
 // 內部：RAG 操作（來自 ai-service）
@@ -110,8 +119,13 @@ app.use((req, res) => {
 // 啟動 Gateway，監聽 config.port。
 // 預設是 8000，也可以透過 .env 的 PORT 修改。
 app.listen(config.port, () => {
-  console.log(`api-gateway is running on port ${config.port}`);
-  console.log(`auth-service target: ${config.authServiceUrl}`);
-  console.log(`user-service target: ${config.userServiceUrl}`);
-  console.log(`character-service target: ${config.characterServiceUrl}`);
+  console.log(`===============================================`);
+  console.log(`  API-Gateway 伺服器已成功啟動！`);
+  console.log(`  正在監聽連接埠：http://localhost:${config.port}`);
+  console.log(`===============================================`);
+  console.log(`  auth-service target:      ${config.authServiceUrl}`);
+  console.log(`  user-service target:      ${config.userServiceUrl}`);
+  console.log(`  character-service target: ${config.characterServiceUrl}`);
+  console.log(`  chat-service target:      ${config.chatServiceUrl}`);
+  console.log(`  ai-service target:        ${config.aiServiceUrl}`);
 });

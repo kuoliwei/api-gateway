@@ -19,5 +19,9 @@ export const internalAuthMiddleware = (req, res, next) => {
   }
 
   console.log(`✅ [internalAuth] 內部請求通過: IP=${clientIp}`);
+
+  // 標記此請求來自服務間呼叫，讓下游服務可以跳過一般使用者的所有權檢查。
+  req.headers['x-internal-request'] = 'true';
+
   next();
 };

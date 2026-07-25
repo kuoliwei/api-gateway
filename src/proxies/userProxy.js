@@ -20,8 +20,11 @@ export const userProxy = createProxyMiddleware({
   // 讓轉發後的請求 Host 看起來像是直接打到 user-service。
   changeOrigin: true,
 
-  // 這裡沒有 pathRewrite，因為 Gateway 的 /users
-  // 和 user-service 的 /users 路徑剛好一樣。
+  // app.use() 前綴掛載會把匹配到的前綴（/api/users 或 /internal/users）
+  // 從 req.url 中 strip 掉，所以這裡要把 /users 補回去，
+  // 例如 /api/users/usr_123 進來時 path 只剩 /usr_123，要轉成 /users/usr_123。
+  pathRewrite: (path) => `/users${path}`,
+
   on: {
     proxyRes: removeDownstreamCorsHeaders,
     error: (err, req, res) => {

@@ -20,11 +20,13 @@ export const publicAuthProxy = createProxyMiddleware({
   // 對多數後端服務或反向代理情境來說，這樣比較符合預期。
   changeOrigin: true,
 
-  // 前端對 Gateway 打 /auth/register，
+  // 前端對 Gateway 打 /api/auth/register，
   // 但 auth-service 真正的路由是 /api/v1/auth/register。
-  // 所以這裡把路徑開頭的 /auth 改寫成 /api/v1/auth。
+  // 這裡是用 app.post('/api/auth/...') 精確路徑掛載（不是 app.use 前綴掛載），
+  // Express 不會幫忙 strip 掉 mount 路徑，所以 req.url 進來時仍是完整的
+  // /api/auth/register，要把開頭的 /api/auth 改寫成 /api/v1/auth。
   pathRewrite: {
-    '^/auth': '/api/v1/auth',
+    '^/api/auth': '/api/v1/auth',
   },
   on: {
     proxyRes: removeDownstreamCorsHeaders,
